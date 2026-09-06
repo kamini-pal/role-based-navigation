@@ -2,7 +2,7 @@ const mockPermissions = {
     modules: [
         {
             name: 'Orders',
-            permission: ['VIEW', 'CREATE'],
+            permission: ['VIEW', 'CREATE', 'EDIT', 'DELETE'],
         },
         {
             name: 'Billing',

@@ -14,8 +14,10 @@ function Order() {
     const { hasPermission } = useAuth()
     const [orders, setOrders] = useState(mockOrders)
     const [showModal, setShowModal] = useState(false)
+    const [editingOrder, setEditingOrder] = useState(null)
     const [formData, setFormData] = useState(initialFormState)
     const [formErrors, setFormErrors] = useState({})
+    const [deletingOrder, setDeletingOrder] = useState(null)
 
     function formatCurrency(amount) {
         return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })
@@ -65,7 +67,7 @@ function Order() {
         }
     }
 
-    function handleCreateOrder(e) {
+    function handleSubmitOrder(e) {
         e.preventDefault()
         const errors = validateForm()
         if (Object.keys(errors).length > 0) {
@@ -73,26 +75,62 @@ function Order() {
             return
         }
 
-        const newOrder = {
-            id: generateOrderId(),
-            customer: formData.customer.trim(),
-            email: formData.email.trim(),
-            date: new Date().toISOString().split('T')[0],
-            status: formData.status,
-            total: parseFloat(formData.total),
-            items: parseInt(formData.items, 10),
+        if (editingOrder) {
+            // Update existing order
+            setOrders((prev) =>
+                prev.map((order) =>
+                    order.id === editingOrder.id
+                        ? {
+                              ...order,
+                              customer: formData.customer.trim(),
+                              email: formData.email.trim(),
+                              status: formData.status,
+                              total: parseFloat(formData.total),
+                              items: parseInt(formData.items, 10),
+                          }
+                        : order
+                )
+            )
+        } else {
+            // Create new order
+            const newOrder = {
+                id: generateOrderId(),
+                customer: formData.customer.trim(),
+                email: formData.email.trim(),
+                date: new Date().toISOString().split('T')[0],
+                status: formData.status,
+                total: parseFloat(formData.total),
+                items: parseInt(formData.items, 10),
+            }
+            setOrders((prev) => [newOrder, ...prev])
         }
 
-        setOrders((prev) => [newOrder, ...prev])
-        setFormData(initialFormState)
+        handleCloseModal()
+    }
+
+    function handleEditOrder(order) {
+        setEditingOrder(order)
+        setFormData({
+            customer: order.customer,
+            email: order.email,
+            items: String(order.items),
+            total: String(order.total),
+            status: order.status,
+        })
         setFormErrors({})
-        setShowModal(false)
+        setShowModal(true)
     }
 
     function handleCloseModal() {
         setShowModal(false)
+        setEditingOrder(null)
         setFormData(initialFormState)
         setFormErrors({})
+    }
+
+    function handleConfirmDelete() {
+        setOrders((prev) => prev.filter((order) => order.id !== deletingOrder.id))
+        setDeletingOrder(null)
     }
 
     return (
@@ -159,8 +197,23 @@ function Order() {
                                         {order.status}
                                     </span>
                                 </td>
-                                <td>
-                                    <span className="action-placeholder">—</span>
+                                <td className="actions-cell">
+                                    {hasPermission('Orders', 'EDIT') && (
+                                        <button
+                                            className="btn btn-sm btn-outline"
+                                            onClick={() => handleEditOrder(order)}
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
+                                    {hasPermission('Orders', 'DELETE') && (
+                                        <button
+                                            className="btn btn-sm btn-danger"
+                                            onClick={() => setDeletingOrder(order)}
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -168,15 +221,15 @@ function Order() {
                 </table>
             </div>
 
-            {/* Create Order Modal */}
+            {/* Create / Edit Order Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={handleCloseModal}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">Create New Order</h2>
+                            <h2 className="modal-title">{editingOrder ? 'Edit Order' : 'Create New Order'}</h2>
                             <button className="modal-close" onClick={handleCloseModal}>×</button>
                         </div>
-                        <form onSubmit={handleCreateOrder} className="modal-form">
+                        <form onSubmit={handleSubmitOrder} className="modal-form">
                             <div className="form-group">
                                 <label htmlFor="customer">Customer Name</label>
                                 <input
@@ -258,10 +311,32 @@ function Order() {
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn btn-primary">
-                                    Create Order
+                                    {editingOrder ? 'Update Order' : 'Create Order'}
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            {deletingOrder && (
+                <div className="modal-overlay" onClick={() => setDeletingOrder(null)}>
+                    <div className="confirm-dialog" onClick={(e) => e.stopPropagation()}>
+                        <div className="confirm-icon">⚠️</div>
+                        <h3 className="confirm-title">Delete Order</h3>
+                        <p className="confirm-message">
+                            Are you sure you want to delete order <strong>{deletingOrder.id}</strong>?
+                            This action cannot be undone.
+                        </p>
+                        <div className="confirm-actions">
+                            <button className="btn btn-secondary" onClick={() => setDeletingOrder(null)}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-danger" onClick={handleConfirmDelete}>
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
