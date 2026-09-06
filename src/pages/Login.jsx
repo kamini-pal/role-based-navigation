@@ -22,26 +22,26 @@ function Login() {
     }
 
     return (
-        <div style={{ maxWidth: '400px', margin: '100px auto', padding: '32px' }}>
-            <h1>Login</h1>
-            <form onSubmit={handleLogin}>
-                <label htmlFor="username">Select User:</label>
-                <select
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    style={{ display: 'block', width: '100%', padding: '8px', margin: '12px 0' }}
-                >
-                    <option value="admin">admin</option>
-                    <option value="viewer">viewer</option>
-                </select>
-                <button
-                    type="submit"
-                    style={{ padding: '8px 24px', cursor: 'pointer' }}
-                >
-                    Login
-                </button>
-            </form>
+        <div className="login-container">
+            <div className="login-card">
+                <h1>Login</h1>
+                <form onSubmit={handleLogin} className="modal-form" style={{ padding: 0 }}>
+                    <div className="form-group">
+                        <label htmlFor="username">Select User</label>
+                        <select
+                            id="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        >
+                            <option value="admin">Admin</option>
+                            <option value="viewer">Viewer</option>
+                        </select>
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                        Login
+                    </button>
+                </form>
+            </div>
         </div>
     )
 }

@@ -18,6 +18,8 @@ function Order() {
     const [formData, setFormData] = useState(initialFormState)
     const [formErrors, setFormErrors] = useState({})
     const [deletingOrder, setDeletingOrder] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [statusFilter, setStatusFilter] = useState('All')
 
     function formatCurrency(amount) {
         return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })
@@ -133,6 +135,16 @@ function Order() {
         setDeletingOrder(null)
     }
 
+    const filteredOrders = orders.filter((order) => {
+        const matchesSearch =
+            order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            order.id.toLowerCase().includes(searchQuery.toLowerCase())
+        
+        const matchesStatus = statusFilter === 'All' || order.status === statusFilter
+        
+        return matchesSearch && matchesStatus
+    })
+
     return (
         <div className="orders-page">
             <div className="page-header">
@@ -166,6 +178,28 @@ function Order() {
                 </div>
             </div>
 
+            <div className="filters-bar">
+                <input
+                    type="text"
+                    placeholder="Search by customer or order ID..."
+                    className="search-input"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <select
+                    className="status-filter"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+
             <div className="table-container">
                 <table className="orders-table">
                     <thead>
@@ -180,7 +214,17 @@ function Order() {
                         </tr>
                     </thead>
                     <tbody>
-                        {orders.map((order) => (
+                        {filteredOrders.length === 0 ? (
+                            <tr>
+                                <td colSpan="7">
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">📋</div>
+                                        <p>No orders found matching your search or filter.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : (
+                        filteredOrders.map((order) => (
                             <tr key={order.id}>
                                 <td className="order-id">{order.id}</td>
                                 <td>
@@ -216,7 +260,8 @@ function Order() {
                                     )}
                                 </td>
                             </tr>
-                        ))}
+                        ))
+                        )}
                     </tbody>
                 </table>
             </div>
