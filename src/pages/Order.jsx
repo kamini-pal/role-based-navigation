@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import mockOrders from '../data/mockOrders'
+import { loadOrders, saveOrders } from '../utils/storage'
 
 const initialFormState = {
     customer: '',
@@ -12,7 +12,8 @@ const initialFormState = {
 
 function Order() {
     const { hasPermission } = useAuth()
-    const [orders, setOrders] = useState(mockOrders)
+    // Lazy initializer: calls shared loadOrders() — reads localStorage, falls back to mockOrders.
+    const [orders, setOrders] = useState(loadOrders)
     const [showModal, setShowModal] = useState(false)
     const [editingOrder, setEditingOrder] = useState(null)
     const [formData, setFormData] = useState(initialFormState)
@@ -20,6 +21,11 @@ function Order() {
     const [deletingOrder, setDeletingOrder] = useState(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState('All')
+
+    // Persist orders to localStorage whenever the list changes (create / edit / delete).
+    useEffect(() => {
+        saveOrders(orders)
+    }, [orders])
 
     function formatCurrency(amount) {
         return '₹' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })
